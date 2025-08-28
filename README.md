@@ -2,7 +2,7 @@
 
 ## Introdução
 
-Este guia detalha o processo de implantação e configuração inicial do NEOiD Maestro, uma plataforma unificada para o gerenciamento de dispositivos S41, D41 e E41. O Maestro simplifica a administração de sua infraestrutura de streaming de vídeo, oferecendo recursos avançados como agregação automática de links, roteamento de vídeo em tempo real, comunicação de áudio full-duplex e monitoramento unificado.
+Este guia detalha o processo de implantação e configuração inicial do NEOiD Maestro, uma plataforma unificada para o gerenciamento de dispositivos SOMA, ENCODER PRO e DECODER PRO. O Maestro simplifica a administração de sua infraestrutura de streaming de vídeo, oferecendo recursos avançados como agregação automática de links, roteamento de vídeo em tempo real, comunicação de áudio full-duplex e monitoramento unificado.
 
 ## 1. Preparação do Ambiente
 
@@ -29,7 +29,17 @@ Para garantir a conectividade e o funcionamento adequado do Maestro, observe os 
 
 ### 1.4. Configurações de Firewall
 
-Se houver um firewall em sua rede, é crucial que todas as portas estejam abertas para permitir o streaming em qualquer porta a qualquer momento. Certifique-se de que as configurações do firewall permitam todas as comunicações de rede necessárias para o CNDLive Manager, garantindo que o Maestro possa operar sem restrições.
+Se houver um firewall em sua rede, é crucial que todas as portas estejam abertas para permitir o streaming em qualquer porta a qualquer momento. Certifique-se de que as configurações do firewall permitam todas as comunicações de rede necessárias, garantindo que o NEOiD Maestro possa operar sem restrições.
+
+  As portas de entrada padrão 
+ - WEBUI: 8080 TCP
+ - WEBUI COM SSL: XXXX TCP
+ - BONDING: 50000 UDP
+ - INTERCOM: 40000 a 40050 UDP
+ - SIGNALING: 5960 e 5961 TCP
+ - HLS: 8080 TCP
+ - RTSP: 554 TCP/UDP
+ - SRT: Definidas pelo listener usuário
 
 ## 2. Implantação do Maestro
 
@@ -76,12 +86,12 @@ Aguarde a conclusão do download. A duração deste processo dependerá do taman
 Após o download da imagem, você pode iniciar o contêiner do Maestro com o seguinte comando:
 
 ```bash
-docker run -itd --name neoid --restart=always -v ~/:/data --privileged --user root --network host neoidtech/maestro
+docker run -itd --name neoid_maestro --restart=always -v ~/:/data --privileged --user root --network host neoidtech/maestro
 ```
 
 **Parâmetros Chave:**
 
-*   `--name neoid`: Define o nome do contêiner como 'neoid'.
+*   `--name neoid_maestro`: Define o nome do contêiner como 'neoid_maestro'.
 *   `--restart=always`: Garante que o contêiner será reiniciado automaticamente em caso de falha ou reinicialização do servidor.
 *   `-v ~/:/data`: Monta o diretório home do usuário no contêiner, permitindo o acesso a dados.
 *   `--privileged`: Concede privilégios estendidos ao contêiner, necessários para certas operações.
@@ -113,7 +123,7 @@ Após inserir as credenciais, clique no botão "Login" ou pressione Enter.
 
 ### 3.3. Verificação da Interface de Gerenciamento
 
-Após o login bem-sucedido, você será direcionado ao painel do Maestro. Para verificar a interface de gerenciamento e registrar seus dispositivos, navegue até **Dispositivos > Adicionar Dispositivo**. Aqui, você poderá registrar seu hardware S41, D41 ou E41.
+Após o login bem-sucedido, você será direcionado ao painel do Maestro. Para verificar a interface de gerenciamento e registrar seus dispositivos, navegue até **Dispositivos > Adicionar Dispositivo**. Aqui, você poderá registrar seu hardware SOMA, ENCODER PRO ou DECODER PRO.
 
 Os indicadores de sucesso incluem a exibição dos painéis de status do dispositivo e métricas em tempo real, confirmando que o Maestro está operando corretamente e gerenciando seus dispositivos.
 
