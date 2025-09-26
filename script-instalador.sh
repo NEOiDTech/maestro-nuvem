@@ -8,26 +8,6 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # ==================================
-# ROTINA DE CORREÇÃO CRÍTICA (CRLF/Windows)
-# Garante que o script está no formato Unix antes de rodar.
-# ==================================
-fix_crlf_on_execution() {
-    # Verifica se o script contém quebras de linha do Windows (\r)
-    if grep -q $'\r' "$0"; then
-        echo "Corrigindo formato de arquivo (CRLF -> LF) para evitar erros de sintaxe..."
-        # Usa 'tr' para deletar o caractere \r (retorno de carro) do arquivo atual ($0)
-        tr -d '\r' < "$0" > /tmp/temp_fixed_script.sh
-        mv /tmp/temp_fixed_script.sh "$0"
-        
-        # Re-executa o script corrigido para que o bash leia o formato correto
-        log "Formato corrigido. Reiniciando o script..."
-        exec /bin/bash "$0" "$@"
-    fi
-}
-# Execute a correção imediatamente
-fix_crlf_on_execution
-
-# ==================================
 # DEFAULTS
 # ==================================
 IMAGE_DEFAULT="neoidtech/maestro"
@@ -70,7 +50,7 @@ warn() { echo -e "[\e[1;33mALERTA\e[0m] $*"; }
 # Confirmação interativa
 confirm() {
   local msg=${1:-"Confirm? (y/n): "}
-  # O '/dev/tty' garante que a leitura ocorre a partir do terminal de controle, mesmo que o stdin esteja redirecionado.
+  # O '/dev/tty' garante que a leitura ocorre a partir do terminal de controle.
   read -r -p "$msg" ans < /dev/tty
   case "$ans" in
     [Yy]|[Yy][Ee][Ss]) return 0;;
