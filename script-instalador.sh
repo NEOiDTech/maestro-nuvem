@@ -8,6 +8,26 @@ set -euo pipefail
 IFS=$'\n\t'
 
 # ==================================
+# ROTINA DE CORREÇÃO CRÍTICA (CRLF/Windows)
+# Garante que o script está no formato Unix antes de rodar.
+# ==================================
+fix_crlf_on_execution() {
+    # Verifica se o script contém quebras de linha do Windows (\r)
+    if grep -q $'\r' "$0"; then
+        echo "Corrigindo formato de arquivo (CRLF -> LF) para evitar erros de sintaxe..."
+        # Usa 'tr' para deletar o caractere \r (retorno de carro) do arquivo atual ($0)
+        tr -d '\r' < "$0" > /tmp/temp_fixed_script.sh
+        mv /tmp/temp_fixed_script.sh "$0"
+        
+        # Re-executa o script corrigido para que o bash leia o formato correto
+        log "Formato corrigido. Reiniciando o script..."
+        exec /bin/bash "$0" "$@"
+    fi
+}
+# Execute a correção imediatamente
+fix_crlf_on_execution
+
+# ==================================
 # DEFAULTS
 # ==================================
 IMAGE_DEFAULT="neoidtech/maestro"
@@ -19,8 +39,7 @@ RESTART_POLICY_DEFAULT="always"
 PRIVILEGED_DEFAULT=true
 
 # ==================================
-# ASCII BANNER (Corrigido para evitar erros de sintaxe)
-# O EOF no final DEVE estar na primeira coluna, sem espaços.
+# ASCII BANNER
 # ==================================
 MAESTRO_BANNER=$(cat << "EOF"
   _   _ _____ ____ ___ ___ _  _ _  _ _____ _  _ 
@@ -99,8 +118,7 @@ ensure_docker() {
     case "$pm" in
       apt)
         log "Instalando Docker para Debian/Ubuntu (via script get.docker.com)..."
-        # Uso do script get.docker.com para instalação simplificada
-        apt-get update || true # O update pode falhar se não houver internet, ignoramos
+        apt-get update || true 
         apt-get install -y ca-certificates curl gnupg lsb-release
         curl -fsSL https://get.docker.com | sh
         ;;
@@ -135,7 +153,6 @@ run_container() {
   local image="$1" name="$2" data_dir="$3" host_port="$4" privileged="$5" restart_policy="$6"
 
   mkdir -p "$data_dir"
-  # Garante que o diretório de dados existe e tem permissão para o root (usuário do container)
   chown -R 0:0 "$data_dir"
   chmod 700 "$data_dir"
 
@@ -145,7 +162,6 @@ run_container() {
   fi
 
   log "Iniciando container $name a partir de $image"
-  # Usamos o modo bridge e mapeamento de porta (-p HOST_PORT:CONTAINER_PORT)
   docker run -itd \
     --name "$name" \
     --restart="$restart_policy" \
@@ -201,7 +217,6 @@ update_container() {
   docker rm "$name" >/dev/null 2>&1 || true
 
   log "Recriar container com a nova imagem..."
-  # Passando a porta do host para a função run_container
   run_container "$image" "$name" "$data_dir" "$host_port" "$privileged" "$restart_policy"
   log "Update concluído."
 }
