@@ -166,7 +166,7 @@ main_menu() {
 
   while true; do
     echo
-    echo "================ NEOiD MAESTRO - Gerenciador Interativo ================"
+    echo "========================= NEOiD MAESTRO NUVEM ========================="
     echo "Imagem atual: $image"
     echo "Nome do container: $name"
     echo "Diretório de dados (host): $data_dir"
@@ -174,8 +174,8 @@ main_menu() {
     echo "Privileged: $privileged   Restart: $restart_policy   Network: $network_mode"
     echo "======================================================================="
     echo "1) Garantir Docker instalado"
-    echo "2) Instalar / Rodar Maestro (pull + run)"
-    echo "3) Atualizar Maestro (pull + recreate)"
+    echo "2) Instalar / Rodar MAESTRO NUVEM (pull + run)"
+    echo "3) Atualizar MAESTRO NUVEM (pull + recreate)"
     echo "4) Iniciar container"
     echo "5) Parar container"
     echo "6) Reiniciar container"
@@ -186,7 +186,7 @@ main_menu() {
     echo "11) Alterar configurações (imagem/nome/diretório/porta/privileged/network)"
     echo "12) Sair"
     echo -n "Escolha uma opção [1-12]: "
-    read -p opt
+    read -p opt < /dev/tty
     case "$opt" in
       1)
         ensure_docker
