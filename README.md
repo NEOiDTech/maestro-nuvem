@@ -33,7 +33,7 @@ Se houver um firewall em sua rede, é crucial que todas as portas estejam aberta
 
   As portas de entrada padrão 
  - WEBUI: 8080 TCP
- - WEBUI COM SSL: XXXX TCP
+ - WEBUI COM SSL: 80 TCP
  - BONDING: 50000 UDP
  - INTERCOM: 40000 a 40050 UDP
  - SIGNALING: 5960 e 5961 TCP
@@ -108,6 +108,10 @@ Abra um navegador web de sua preferência (por exemplo, Google Chrome ou Mozilla
 
 ```
 http://<server-ip>:8080
+```
+ou
+```
+https://<server-ip>:80 (SSL)
 ```
 
 Substitua `<server-ip>` pelo endereço IP real do seu servidor. Por exemplo, se o IP do seu servidor for `192.168.1.100`, você digitaria `http://192.168.1.100:8080`.
