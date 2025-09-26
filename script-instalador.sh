@@ -19,7 +19,8 @@ RESTART_POLICY_DEFAULT="always"
 PRIVILEGED_DEFAULT=true
 
 # ==================================
-# ASCII BANNER
+# ASCII BANNER (Corrigido para evitar erros de sintaxe)
+# O EOF no final DEVE estar na primeira coluna, sem espaços.
 # ==================================
 MAESTRO_BANNER=$(cat << "EOF"
   _   _ _____ ____ ___ ___ _  _ _  _ _____ _  _ 
