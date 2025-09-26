@@ -186,7 +186,7 @@ main_menu() {
     echo "11) Alterar configurações (imagem/nome/diretório/porta/privileged/network)"
     echo "12) Sair"
     echo -n "Escolha uma opção [1-12]: "
-    read -p opt < /dev/tty
+    read opt < /dev/tty
     case "$opt" in
       1)
         ensure_docker
