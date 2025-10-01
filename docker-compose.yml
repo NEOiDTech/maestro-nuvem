@@ -1,7 +1,7 @@
 services:
   maestro-nuvem:
     image: neoidtech/maestro:latest
-    container_name: maestro-nuvem
+    container_name: neoid-maestro-nuvem
     restart: always
     privileged: true
     volumes:
