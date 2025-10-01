@@ -13,7 +13,7 @@
 
 set -euo pipefail
 
-REPO_URL="https://github.com/reustaquiojr/maestro-nuvem.git"
+REPO_URL="https://github.com/neoidtech/maestro-nuvem.git"
 APP_DIR="$HOME/maestro-nuvem"
 CONTAINER_NAME="maestro-nuvem"
 
