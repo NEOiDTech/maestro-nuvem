@@ -7,18 +7,20 @@ services:
     volumes:
      - ./data:/data
     network_mode: host
+    environment:
+     - TZ=America/Sao_Paulo
     # No network_mode: host, a seção ports é ignorada pelo Docker
     # mas mantemos para documentação das portas utilizadas
-   ports:
-    - "8080:8080/tcp"   # WEBUI/HLS
-    - "443:443/tcp"     # WEBUI SSL
-    - "50000:50000/udp" # BONDING
-    - "40000-40050:40000-40050/udp" # Intercom
-    - "5960-5961:5960-5961/tcp"   # Signaling
-    - "1935:1935/tcp"   # RTMP
-    - "554:554/tcp"     # RTSP TCP
-    - "554:554/udp"     # RTSP UDP
-    - "4570-4579:4570-4579/udp" # SRT RANGE CUSTOMIZADO PELO USUARIO
+    ports:
+     - "8080:8080/tcp"   # WEBUI/HLS
+     - "443:443/tcp"     # WEBUI SSL
+     - "50000:50000/udp" # BONDING
+     - "40000-40050:40000-40050/udp" # Intercom
+     - "5960-5961:5960-5961/tcp"   # Signaling
+     - "1935:1935/tcp"   # RTMP
+     - "554:554/tcp"     # RTSP TCP
+     - "554:554/udp"     # RTSP UDP
+     - "4570-4579:4570-4579/udp" # SRT RANGE CUSTOMIZADO PELO USUARIO
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080"]
       interval: 30s
