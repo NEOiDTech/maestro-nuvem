@@ -3,12 +3,11 @@ Script de instalação automática
 Com o intúito de facilitar ainda mais a implantação do NEOiD MAESTRO NUVEM desenvolvemos um script para realizar de forma interativa;
 
 
-🖥️ Menu interativo
+# 🖥️ Menu interativo
 
 ```bash
 sudo curl -fsSL https://raw.githubusercontent.com/neoidtech/maestro-nuvem/main/instalador-maestro.sh | sudo bash
 ```
-
 
 🚀 Instalação Rápida
 Instalação Automática (Recomendada)
