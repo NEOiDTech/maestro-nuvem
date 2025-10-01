@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # =========================================================
-# Script: maestro-install-update.sh
+# Script: instalador-maestro.sh
 # Funções:
 #   - Instalar dependências (Docker e Docker Compose)
-#   - Instalar ou atualizar Maestro Nuvem
+#   - Instalar ou atualizar MAESTRO NUVEM
 #   - Status / Parar container
 #   - Remover container/imagem
 #   - Remover Docker completamente
@@ -15,8 +15,8 @@
 set -euo pipefail
 
 REPO_URL="https://github.com/neoidtech/maestro-nuvem.git"
-APP_DIR="$HOME/maestro-nuvem"
-CONTAINER_NAME="maestro-nuvem"
+APP_DIR="$HOME/neoid-maestro-nuvem"
+CONTAINER_NAME="neoid-maestro-nuvem"
 HEALTH_CHECK_TIMEOUT=60
 HEALTH_CHECK_INTERVAL=5
 
