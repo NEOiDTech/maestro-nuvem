@@ -143,11 +143,26 @@ install_or_update_maestro() {
     if [ -d "$APP_DIR" ]; then
         log "Atualizando repositório existente..."
         cd "$APP_DIR" || exit 1
-        git pull
+        
+        # 🔧 CORREÇÃO: Configurar Git para evitar erro de branches divergentes
+        git config pull.ff only
+        
+        # 🔧 CORREÇÃO: Usar fetch + reset para garantir sincronização
+        git fetch origin
+        CURRENT_BRANCH=$(git branch --show-current)
+        if [ -z "$CURRENT_BRANCH" ]; then
+            CURRENT_BRANCH="main"
+        fi
+        git reset --hard "origin/$CURRENT_BRANCH"
+        
+        success "Repositório atualizado com sucesso"
     else
         log "Clonando repositório..."
         git clone "$REPO_URL" "$APP_DIR"
         cd "$APP_DIR" || exit 1
+        
+        # 🔧 CORREÇÃO: Configurar Git para futuras atualizações
+        git config pull.ff only
     fi
 
     log "Procurando arquivo docker-compose..."
