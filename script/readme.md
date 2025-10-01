@@ -63,10 +63,8 @@ chmod +x instalador-maestro.sh
 ./instalador-maestro.sh
 
 # Ou executar com parâmetros específicos
-./instalador-maestro.sh install
-./instalador-maestro.sh update
-./instalador-maestro.sh status
-./instalador-maestro.sh health
+./instalador-maestro.sh (install|stop|update|status|health|purge)
+
 🌐 Portas e Acesso
 Após a instalação bem-sucedida, o Maestro Nuvem estará disponível nas seguintes portas:
 
