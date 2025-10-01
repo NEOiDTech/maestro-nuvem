@@ -21,6 +21,22 @@ HEALTH_CHECK_TIMEOUT=60
 HEALTH_CHECK_INTERVAL=5
 
 # -----------------------
+# Banner
+# -----------------------
+show_banner() {
+cat <<'EOF'
+  _  _ ___ ___  _ ___                                                
+ | \| | __/ _ \(_)   \                                               
+ | .` | _| (_) | | |) |                                              
+ |_|\_|___\___/|_|___/ _____ ___  ___    _  _ _   ___   _____ __  __ 
+ |  \/  | /_\ | __/ __|_   _| _ \/ _ \  | \| | | | \ \ / / __|  \/  |
+ | |\/| |/ _ \| _|\__ \ | | |   / (_) | | .` | |_| |\ V /| _|| |\/| |
+ |_|  |_/_/ \_\___|___/ |_| |_|_\\___/  |_|\_|\___/  \_/ |___|_|  |_| 
+EOF
+echo
+}
+
+# -----------------------
 # Funções de utilitário
 # -----------------------
 log() {
@@ -60,6 +76,100 @@ check_git() {
         return 1
     fi
     return 0
+}
+
+# -----------------------
+# Funções principais
+# -----------------------
+
+install_docker() {
+    log "Instalando Docker e dependências..."
+    
+    if ! command -v docker &>/dev/null; then
+        log "Instalando Docker..."
+        curl -fsSL https://get.docker.com | sh
+        sudo usermod -aG docker $USER
+        sudo systemctl enable docker
+        sudo systemctl start docker
+        log "Docker instalado com sucesso"
+        echo ">>> Nota: Você precisa fazer logout e login novamente para usar Docker sem sudo"
+    else
+        log "Docker já está instalado."
+    fi
+
+    if ! command -v docker-compose &>/dev/null; then
+        log "Instalando Docker Compose..."
+        local COMPOSE_VERSION
+        COMPOSE_VERSION=$(curl -s https://api.github.com/repos/docker/compose/releases/latest | grep '"tag_name"' | cut -d'"' -f4)
+        sudo curl -L "https://github.com/docker/compose/releases/download/${COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" \
+            -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        log "Docker Compose ${COMPOSE_VERSION} instalado"
+    else
+        log "Docker Compose já está instalado."
+    fi
+}
+
+install_or_update_maestro() {
+    if ! check_git; then
+        error "Git é necessário para instalar/atualizar o Maestro"
+        return 1
+    fi
+
+    log "Instalando ou atualizando Maestro..."
+
+    if [ -d "$APP_DIR" ]; then
+        log "Atualizando repositório existente..."
+        cd "$APP_DIR" || exit 1
+        git pull
+    else
+        log "Clonando repositório..."
+        git clone "$REPO_URL" "$APP_DIR"
+        cd "$APP_DIR" || exit 1
+    fi
+
+    log "Procurando arquivo docker-compose..."
+    local COMPOSE_FILE=""
+
+    for file in docker-compose.yml docker-compose.yaml compose.yaml compose.yml; do
+        if [ -f "$file" ]; then
+            COMPOSE_FILE="$file"
+            break
+        fi
+    done
+
+    if [ -n "$COMPOSE_FILE" ]; then
+        log "Arquivo de compose encontrado: $COMPOSE_FILE"
+        docker compose -f "$COMPOSE_FILE" up -d --build
+        log "Maestro iniciado com docker-compose"
+    else
+        log "Nenhum arquivo de compose encontrado. Usando fallback com docker run..."
+        
+        # Parar e remover container antigo
+        if docker ps -a --format '{{.Names}}' | grep -Eq "^$CONTAINER_NAME\$"; then
+            log "Parando container antigo..."
+            docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
+            log "Removendo container antigo..."
+            docker rm "$CONTAINER_NAME" >/dev/null 2>&1 || true
+        fi
+
+        log "Baixando imagem mais recente do Maestro..."
+        docker pull neoidtech/maestro:latest
+
+        log "Subindo novo container..."
+        docker run -d \
+            --name "$CONTAINER_NAME" \
+            --restart unless-stopped \
+            -p 8080:8080 \
+            neoidtech/maestro:latest
+        
+        log "Maestro iniciado com docker run"
+    fi
+    
+    # Executar verificação de saúde após instalação/atualização
+    log "Aguardando container iniciar..."
+    sleep 10
+    check_health
 }
 
 # -----------------------
@@ -246,10 +356,110 @@ wait_for_healthy() {
     done
 }
 
-# ... (o restante das funções permanece igual - install_docker, install_or_update_maestro, etc.)
+# -----------------------
+# Outras ações
+# -----------------------
+status_maestro() {
+    if ! check_docker; then
+        error "Docker não está instalado ou não está rodando."
+        return 1
+    fi
+    
+    log "Status dos containers:"
+    docker ps --filter "name=${CONTAINER_NAME}" || true
+    
+    echo
+    log "Informações detalhadas do container:"
+    docker inspect "$CONTAINER_NAME" 2>/dev/null | jq -r '.[] | {Name: .Name, State: .State.Status, Running: .State.Running, Health: .State.Health.Status, IP: .NetworkSettings.IPAddress, Ports: .NetworkSettings.Ports}' 2>/dev/null || \
+        echo "Container não encontrado ou jq não instalado"
+    
+    echo
+    log "Últimos logs do container:"
+    docker logs "$CONTAINER_NAME" --tail 10 2>&1 || echo "Não foi possível acessar os logs"
+}
+
+stop_maestro() {
+    if ! check_docker; then
+        error "Docker não está instalado ou não está rodando."
+        return 1
+    fi
+    
+    log "Parando container ${CONTAINER_NAME}..."
+    docker stop "${CONTAINER_NAME}" 2>/dev/null || echo "Nenhum container em execução com esse nome."
+}
+
+remove_container() {
+    if ! check_docker; then
+        error "Docker não está instalado ou não está rodando."
+        return 1
+    fi
+    
+    log "Removendo container ${CONTAINER_NAME}..."
+    docker rm -f "${CONTAINER_NAME}" 2>/dev/null || echo "Nenhum container encontrado."
+}
+
+remove_image() {
+    if ! check_docker; then
+        error "Docker não está instalado ou não está rodando."
+        return 1
+    fi
+    
+    log "Removendo imagens relacionadas ao Maestro..."
+    local IMG_IDS
+    IMG_IDS=$(docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep -E 'maestro|neoid|reustaquiojr' | awk '{print $2}' || true)
+    
+    if [ -n "${IMG_IDS}" ]; then
+        echo "Imagens encontradas para remoção:"
+        docker images | grep -E 'maestro|neoid|reustaquiojr' || true
+        read -p "Confirma remoção destas imagens? (s/N): " -n 1 -r
+        echo
+        if [[ $REPLY =~ ^[Ss]$ ]]; then
+            docker rmi -f ${IMG_IDS} || true
+            log "Imagens removidas."
+        else
+            log "Remoção cancelada."
+        fi
+    else
+        log "Nenhuma imagem automática encontrada."
+    fi
+}
+
+remove_docker() {
+    log "Removendo Docker e todos os dados..."
+    
+    if command -v docker &>/dev/null; then
+        sudo systemctl stop docker docker.socket containerd 2>/dev/null || true
+    fi
+    
+    sudo apt-get remove -y docker docker-engine docker.io containerd runc 2>/dev/null || true
+    sudo apt-get purge -y docker-ce docker-ce-cli containerd.io 2>/dev/null || true
+    sudo apt-get autoremove -y --purge 2>/dev/null || true
+    sudo rm -rf /var/lib/docker /var/lib/containerd /etc/docker
+    sudo rm -f /etc/apt/sources.list.d/docker.list
+    
+    log "Docker removido completamente."
+    log "AVISO: Todos os containers, imagens e volumes foram perdidos."
+}
+
+clean_volumes() {
+    if ! check_docker; then
+        error "Docker não está instalado ou não está rodando."
+        return 1
+    fi
+    
+    log "Limpando volumes órfãos..."
+    read -p "Isso removerá todos os volumes não utilizados. Continuar? (s/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Ss]$ ]]; then
+        docker volume prune -f
+        log "Volumes limpos."
+    else
+        log "Operação cancelada."
+    fi
+}
 
 # -----------------------
-# Menu - ATUALIZADO
+# Menu
 # -----------------------
 main_menu() {
     while true; do
@@ -298,7 +508,7 @@ main_menu() {
 }
 
 # -----------------------
-# Execução por parâmetros - ATUALIZADO
+# Execução por parâmetros
 # -----------------------
 case "${1:-}" in
     "" ) main_menu ;;
