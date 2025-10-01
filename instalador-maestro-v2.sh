@@ -1,194 +1,162 @@
-#!/usr/bin/env bash
-set -uo pipefail
+#!/bin/bash
 
-# =========================
-# Variáveis de Configuração
-# =========================
-IMAGE="neoidtech/maestro"
-CONTAINER_NAME="neoid_maestro"
-DATA_DIR="/opt/neoid/data"
-WEBUI_PORT=8080
-PRIVILEGED="true"
-RESTART="always"
-NETWORK="host"
+# =========================================================
+# Script: maestro-install-update.sh
+# Funções:
+#   - Instalar dependências (Docker e Docker Compose)
+#   - Instalar ou atualizar Maestro Nuvem
+#   - Status / Parar container
+#   - Remover container/imagem
+#   - Remover Docker completamente
+#   - Menu interativo
+# =========================================================
 
-# =========================
-# Funções Auxiliares
-# =========================
-ensure_docker() {
-    echo "[*] Verificando instalação do Docker..."
+set -e
+
+REPO_URL="https://github.com/reustaquiojr/maestro-nuvem.git"
+APP_DIR="$HOME/maestro-nuvem"
+CONTAINER_NAME="maestro-nuvem"
+
+# ---- Funções ----
+
+install_docker() {
+    echo ">>> Instalando Docker e dependências..."
     if ! command -v docker &>/dev/null; then
-        echo "[*] Instalando Docker..."
         curl -fsSL https://get.docker.com | sh
-        systemctl enable --now docker
+        sudo systemctl enable docker
+        sudo systemctl start docker
     else
-        echo "[✓] Docker já está instalado."
+        echo "Docker já está instalado."
     fi
-    sleep 2
+
+    if ! command -v docker-compose &>/dev/null; then
+        echo ">>> Instalando Docker Compose..."
+        sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" \
+            -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+    else
+        echo "Docker Compose já está instalado."
+    fi
 }
 
-install_maestro() {
-    ensure_docker
-    echo "[*] Criando diretório de dados: $DATA_DIR"
-    mkdir -p "$DATA_DIR"
+install_or_update_maestro() {
+    echo ">>> Instalando ou atualizando Maestro..."
+    if [ -d "$APP_DIR" ]; then
+        echo ">>> Atualizando repositório existente..."
+        cd "$APP_DIR"
+        git pull
+    else
+        echo ">>> Clonando repositório..."
+        git clone "$REPO_URL" "$APP_DIR"
+        cd "$APP_DIR"
+    fi
 
-    echo "[*] Baixando imagem: $IMAGE"
-    docker pull "$IMAGE"
-
-    echo "[*] Executando container: $CONTAINER_NAME"
-    docker run -dit \
-        --name "$CONTAINER_NAME" \
-        --restart="$RESTART" \
-        -v "$DATA_DIR:/data" \
-        ${PRIVILEGED:+--privileged} \
-        --network "$NETWORK" \
-        -p "$WEBUI_PORT:8080" \
-        "$IMAGE"
-    echo "[✓] Maestro instalado e em execução."
-    sleep 3
+    echo ">>> Subindo containers..."
+    docker compose pull
+    docker compose up -d
 }
 
-update_maestro() {
-    echo "[*] Atualizando Maestro..."
-    docker pull "$IMAGE"
-    docker stop "$CONTAINER_NAME" 2>/dev/null || true
-    docker rm "$CONTAINER_NAME" 2>/dev/null || true
-    install_maestro
+status_maestro() {
+    echo ">>> Status dos containers:"
+    docker ps --filter "name=$CONTAINER_NAME"
 }
 
-start_container() {
-    docker start "$CONTAINER_NAME"
-    echo "[✓] Container iniciado."
-    sleep 2
-}
-
-stop_container() {
-    docker stop "$CONTAINER_NAME"
-    echo "[✓] Container parado."
-    sleep 2
-}
-
-restart_container() {
-    docker restart "$CONTAINER_NAME"
-    echo "[✓] Container reiniciado."
-    sleep 2
-}
-
-logs_container() {
-    docker logs -f "$CONTAINER_NAME"
-}
-
-status_container() {
-    docker ps -a --filter "name=$CONTAINER_NAME"
-    read -rp "Pressione ENTER para voltar ao menu..."
+stop_maestro() {
+    echo ">>> Parando container $CONTAINER_NAME..."
+    docker stop "$CONTAINER_NAME" 2>/dev/null || echo "Nenhum container encontrado."
 }
 
 remove_container() {
-    echo "[*] Removendo container: $CONTAINER_NAME"
-    docker stop "$CONTAINER_NAME" 2>/dev/null || true
-    docker rm "$CONTAINER_NAME" 2>/dev/null || true
-    echo "[✓] Container removido."
-    sleep 2
+    echo ">>> Removendo container $CONTAINER_NAME..."
+    docker rm -f "$CONTAINER_NAME" 2>/dev/null || echo "Nenhum container encontrado."
 }
 
 remove_image() {
-    echo "[*] Removendo imagem: $IMAGE"
-    docker rmi "$IMAGE" 2>/dev/null || true
-    echo "[✓] Imagem removida."
-    sleep 2
+    echo ">>> Removendo imagem do Maestro..."
+    IMAGE_ID=$(docker images -q reustaquiojr/maestro-nuvem)
+    if [ -n "$IMAGE_ID" ]; then
+        docker rmi -f "$IMAGE_ID"
+    else
+        echo "Nenhuma imagem encontrada."
+    fi
 }
 
 remove_docker() {
-    echo "[*] Removendo Docker e todos os dados..."
-    systemctl stop docker docker.socket
-    apt-get purge -y docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin || true
-    apt-get autoremove -y --purge || true
-    rm -rf /var/lib/docker /var/lib/containerd
-    echo "[✓] Docker removido."
-    sleep 2
+    echo ">>> Removendo Docker e todos os dados..."
+    sudo systemctl stop docker docker.socket || true
+    sudo apt-get remove -y docker docker-engine docker.io containerd runc || true
+    sudo apt-get purge -y docker-ce docker-ce-cli containerd.io || true
+    sudo rm -rf /var/lib/docker /var/lib/containerd
+    echo "Docker removido."
 }
 
-backup_data() {
-    BACKUP_FILE="/opt/neoid/backup-$(date +%F-%H%M%S).tar.gz"
-    echo "[*] Fazendo backup do diretório $DATA_DIR em $BACKUP_FILE"
-    tar -czf "$BACKUP_FILE" -C "$DATA_DIR" .
-    echo "[✓] Backup concluído."
-    sleep 2
+clean_volumes() {
+    echo ">>> Limpando volumes órfãos..."
+    docker volume prune -f
 }
 
-configure_settings() {
-    echo "Configurações atuais:"
-    echo "1) Imagem: $IMAGE"
-    echo "2) Nome do container: $CONTAINER_NAME"
-    echo "3) Diretório de dados: $DATA_DIR"
-    echo "4) Porta WEBUI: $WEBUI_PORT"
-    echo "5) Privileged: $PRIVILEGED"
-    echo "6) Restart policy: $RESTART"
-    echo "7) Network mode: $NETWORK"
-    read -rp "Escolha qual deseja alterar [1-7]: " opt
-    case $opt in
-        1) read -rp "Nova imagem: " IMAGE ;;
-        2) read -rp "Novo nome do container: " CONTAINER_NAME ;;
-        3) read -rp "Novo diretório de dados: " DATA_DIR ;;
-        4) read -rp "Nova porta WEBUI: " WEBUI_PORT ;;
-        5) read -rp "Privileged (true/false): " PRIVILEGED ;;
-        6) read -rp "Restart policy: " RESTART ;;
-        7) read -rp "Network mode: " NETWORK ;;
-        *) echo "Opção inválida." ;;
-    esac
+# ---- Menu ----
+
+show_banner() {
+cat <<'EOF'
+ _  _ ___ ___  _ ___                                                
+ | \| | __/ _ \(_)   \                                               
+ | .` | _| (_) | | |) |                                              
+ |_|\_|___\___/|_|___/ _____ ___  ___    _  _ _   ___   _____ __  __ 
+ |  \/  | /_\ | __/ __|_   _| _ \/ _ \  | \| | | | \ \ / / __|  \/  |
+ | |\/| |/ _ \| _|\__ \ | | |   / (_) | | .` | |_| |\ V /| _|| |\/| |
+ |_|  |_/_/ \_\___|___/ |_| |_|_\\___/  |_|\_|\___/  \_/ |___|_|  |_| 
+EOF
+echo
 }
 
-# =========================
-# Menu Interativo
-# =========================
 main_menu() {
     while true; do
         clear
-        echo "================= NEOiD MAESTRO - Gerenciador Interativo ================="
-        echo "Imagem atual: $IMAGE"
-        echo "Nome do container: $CONTAINER_NAME"
-        echo "Diretório de dados (host): $DATA_DIR"
-        echo "Porta WEBUI (host): $WEBUI_PORT"
-        echo "Privileged: $PRIVILEGED  Restart: $RESTART  Network: $NETWORK"
-        echo "=========================================================================="
-        echo " 1) Garantir Docker instalado"
-        echo " 2) Instalar / Rodar Maestro (pull + run)"
-        echo " 3) Atualizar Maestro (pull + recreate)"
-        echo " 4) Iniciar container"
-        echo " 5) Parar container"
-        echo " 6) Reiniciar container"
-        echo " 7) Logs (follow)"
-        echo " 8) Status do container"
-        echo " 9) Remover container"
-        echo "10) Remover imagem"
-        echo "11) Remover Docker (completo)"
-        echo "12) Backup do diretório de dados"
-        echo "13) Alterar configurações"
-        echo "14) Sair"
-        echo "=========================================================================="
-        read -rp "Escolha uma opção [1-14]: " opcao
+        show_banner
+        echo "======================================"
+        echo "         NEOiD MAESTRO Nuvem          "
+        echo "======================================"
+        echo "1) Instalar Docker"
+        echo "2) Instalar/Atualizar Maestro"
+        echo "3) Status do Maestro"
+        echo "4) Parar Maestro"
+        echo "5) Remover container"
+        echo "6) Remover imagem"
+        echo "7) Remover Docker completamente"
+        echo "8) Limpar volumes órfãos"
+        echo "9) Sair"
+        echo "--------------------------------------"
+        read -rp "Escolha uma opção: " option
 
-        case $opcao in
-            1) ensure_docker ;;
-            2) install_maestro ;;
-            3) update_maestro ;;
-            4) start_container ;;
-            5) stop_container ;;
-            6) restart_container ;;
-            7) logs_container ;;
-            8) status_container ;;
-            9) remove_container ;;
-           10) remove_image ;;
-           11) remove_docker ;;
-           12) backup_data ;;
-           13) configure_settings ;;
-           14) exit 0 ;;
-           *) echo "Opção inválida!" ; sleep 2 ;;
+        clear
+        show_banner
+        case $option in
+            1) install_docker ;;
+            2) install_or_update_maestro ;;
+            3) status_maestro ;;
+            4) stop_maestro ;;
+            5) remove_container ;;
+            6) remove_image ;;
+            7) remove_docker ;;
+            8) clean_volumes ;;
+            9) echo "Saindo..."; exit 0 ;;
+            *) echo "Opção inválida!" ;;
         esac
+
+        echo
+        read -rp ">>> Pressione ENTER para voltar ao menu..." _
     done
 }
 
-# =========================
-# Execução
-# =========================
-main_menu
+# ---- Execução por parâmetros ----
+case "$1" in
+    "" ) main_menu ;;
+    install ) install_docker; install_or_update_maestro ;;
+    update ) install_or_update_maestro ;;
+    status ) status_maestro ;;
+    stop ) stop_maestro ;;
+    remove ) remove_container; remove_image ;;
+    purge ) stop_maestro; remove_container; remove_image; clean_volumes; remove_docker ;;
+    * ) echo "Uso: $0 [install|update|status|stop|remove|purge]"; exit 1 ;;
+esac
