@@ -1,0 +1,17 @@
+services:
+  maestro-nuvem:
+    image: neoidtech/maestro:latest
+    container_name: maestro-nuvem
+    restart: unless-stopped
+    network_mode: host
+    # No network_mode: host, a seção ports é ignorada pelo Docker
+    # mas mantemos para documentação das portas utilizadas
+    ports:
+      - "8080:8080"
+      - "80:80"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
