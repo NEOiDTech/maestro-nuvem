@@ -15,8 +15,8 @@
 set -euo pipefail
 
 REPO_URL="https://github.com/neoidtech/maestro-nuvem.git"
-APP_DIR="$HOME/maestro-nuvem"
-CONTAINER_NAME="maestro-nuvem"
+APP_DIR="$HOME/neoid-maestro-nuvem"
+CONTAINER_NAME="neoid-maestro-nuvem"
 HEALTH_CHECK_TIMEOUT=60
 HEALTH_CHECK_INTERVAL=5
 
