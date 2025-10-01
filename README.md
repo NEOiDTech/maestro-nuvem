@@ -130,4 +130,3 @@ Após inserir as credenciais, clique no botão "Login" ou pressione Enter.
 Após o login bem-sucedido, você será direcionado ao painel do Maestro. Para verificar a interface de gerenciamento e registrar seus dispositivos, navegue até **Dispositivos > Adicionar Dispositivo**. Aqui, você poderá registrar seu hardware SOMA, ENCODER PRO ou DECODER PRO.
 
 Os indicadores de sucesso incluem a exibição dos painéis de status do dispositivo e métricas em tempo real, confirmando que o Maestro está operando corretamente e gerenciando seus dispositivos.
-
