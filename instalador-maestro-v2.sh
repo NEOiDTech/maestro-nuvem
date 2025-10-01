@@ -99,7 +99,7 @@ clean_volumes() {
 
 show_banner() {
 cat <<'EOF'
- _  _ ___ ___  _ ___                                                
+  _  _ ___ ___  _ ___                                                
  | \| | __/ _ \(_)   \                                               
  | .` | _| (_) | | |) |                                              
  |_|\_|___\___/|_|___/ _____ ___  ___    _  _ _   ___   _____ __  __ 
@@ -114,9 +114,7 @@ main_menu() {
     while true; do
         clear
         show_banner
-        echo "======================================"
-        echo "         NEOiD MAESTRO Nuvem          "
-        echo "======================================"
+        echo "===================================================================="
         echo "1) Instalar Docker"
         echo "2) Instalar/Atualizar Maestro"
         echo "3) Status do Maestro"
@@ -126,7 +124,7 @@ main_menu() {
         echo "7) Remover Docker completamente"
         echo "8) Limpar volumes órfãos"
         echo "9) Sair"
-        echo "--------------------------------------"
+        echo "--------------------------------------------------------------------"
         read -rp "Escolha uma opção: " option
 
         clear
