@@ -18,7 +18,7 @@ services:
     - "1935:1935/tcp"   # RTMP
     - "554:554/tcp"     # RTSP TCP
     - "554:554/udp"     # RTSP UDP
-    - "50000-4579:4570-4579/udp" # SRT CUSTOMIZADO
+    - "4570-4579:4570-4579/udp" # SRT RANGE CUSTOMIZADO PELO USUARIO
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080"]
       interval: 30s
