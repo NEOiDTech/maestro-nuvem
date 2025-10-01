@@ -1,10 +1,10 @@
 #!/bin/bash
 
 # =========================================================
-# Script: maestro-install-update.sh
+# Script: instalador-maestro.sh
 # Funções:
 #   - Instalar dependências (Docker e Docker Compose)
-#   - Instalar ou atualizar Maestro Nuvem
+#   - Instalar ou atualizar MAESTRO NUVEM
 #   - Status / Parar container
 #   - Remover container/imagem
 #   - Remover Docker completamente
