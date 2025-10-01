@@ -8,7 +8,7 @@
 #   - Status / Parar container
 #   - Remover container/imagem
 #   - Remover Docker completamente
-#   - Menu interativo
+#   - Menu interativo (funciona com curl | bash -s --)
 # =========================================================
 
 set -e
@@ -44,21 +44,27 @@ install_or_update_maestro() {
     if [ -d "$APP_DIR" ]; then
         echo ">>> Atualizando repositório existente..."
         cd "$APP_DIR"
-        git pull
+        git pull --ff-only || git pull
     else
         echo ">>> Clonando repositório..."
         git clone "$REPO_URL" "$APP_DIR"
         cd "$APP_DIR"
     fi
 
-    echo ">>> Subindo containers..."
-    docker compose pull
-    docker compose up -d
+    echo ">>> Subindo containers (docker compose)..."
+    # tenta usar 'docker compose' (plugin) e, se não existir, tenta 'docker-compose'
+    if docker compose version &>/dev/null; then
+        docker compose pull || true
+        docker compose up -d
+    else
+        docker-compose pull || true
+        docker-compose up -d
+    fi
 }
 
 status_maestro() {
     echo ">>> Status dos containers:"
-    docker ps --filter "name=$CONTAINER_NAME"
+    docker ps --filter "name=$CONTAINER_NAME" || true
 }
 
 stop_maestro() {
@@ -72,30 +78,37 @@ remove_container() {
 }
 
 remove_image() {
-    echo ">>> Removendo imagem do Maestro..."
-    IMAGE_ID=$(docker images -q reustaquiojr/maestro-nuvem)
-    if [ -n "$IMAGE_ID" ]; then
-        docker rmi -f "$IMAGE_ID"
+    echo ">>> Removendo imagem do Maestro (se existir)..."
+    # tenta descobrir imagens relacionadas ao repo clonado ou nome do container
+    IMG_IDS="$(docker images --format '{{.Repository}}:{{.Tag}} {{.ID}}' | grep -E 'maestro|neoid|reustaquiojr' | awk '{print $2}' | tr '\n' ' ')"
+    if [ -n "$IMG_IDS" ]; then
+        docker rmi -f $IMG_IDS || true
+        echo "Imagens removidas (se havia)."
     else
-        echo "Nenhuma imagem encontrada."
+        echo "Nenhuma imagem identificada automaticamente."
     fi
 }
 
 remove_docker() {
-    echo ">>> Removendo Docker e todos os dados..."
+    echo ">>> Removendo Docker e todos os dados... (requer apt/dpkg)"
     sudo systemctl stop docker docker.socket || true
-    sudo apt-get remove -y docker docker-engine docker.io containerd runc || true
-    sudo apt-get purge -y docker-ce docker-ce-cli containerd.io || true
-    sudo rm -rf /var/lib/docker /var/lib/containerd
-    echo "Docker removido."
+    if command -v apt-get &>/dev/null; then
+        sudo apt-get remove -y docker docker-engine docker.io containerd runc || true
+        sudo apt-get purge -y docker-ce docker-ce-cli containerd.io || true
+        sudo apt-get autoremove -y --purge || true
+    else
+        echo "Remoção automática do Docker suportada apenas para apt neste script. Remova manualmente se necessário."
+    fi
+    sudo rm -rf /var/lib/docker /var/lib/containerd || true
+    echo "Docker removido (se aplicável)."
 }
 
 clean_volumes() {
     echo ">>> Limpando volumes órfãos..."
-    docker volume prune -f
+    docker volume prune -f || true
 }
 
-# ---- Menu ----
+# ---- Banner ----
 
 show_banner() {
 cat <<'EOF'
@@ -110,26 +123,28 @@ EOF
 echo
 }
 
+# ---- Menu ----
+
 main_menu() {
     while true; do
         clear
         show_banner
         echo "===================================================================="
-        echo "1) Instalar Docker"
-        echo "2) Instalar/Atualizar Maestro"
-        echo "3) Status do Maestro"
-        echo "4) Parar Maestro"
-        echo "5) Remover container"
-        echo "6) Remover imagem"
-        echo "7) Remover Docker completamente"
-        echo "8) Limpar volumes órfãos"
-        echo "9) Sair"
+        echo " 1) Instalar Docker"
+        echo " 2) Instalar/Atualizar Maestro"
+        echo " 3) Status do Maestro"
+        echo " 4) Parar Maestro"
+        echo " 5) Remover container"
+        echo " 6) Remover imagem"
+        echo " 7) Remover Docker completamente"
+        echo " 8) Limpar volumes órfãos"
+        echo " 9) Sair"
         echo "--------------------------------------------------------------------"
-        read -rp "Escolha uma opção: " option
+        read -p "Escolha uma opção [1-9]: " opt < /dev/tty
 
         clear
         show_banner
-        case $option in
+        case "$opt" in
             1) install_docker ;;
             2) install_or_update_maestro ;;
             3) status_maestro ;;
@@ -143,7 +158,7 @@ main_menu() {
         esac
 
         echo
-        read -rp ">>> Pressione ENTER para voltar ao menu..." _
+        read -p ">>> Pressione ENTER para voltar ao menu..." _ < /dev/tty
     done
 }
 
