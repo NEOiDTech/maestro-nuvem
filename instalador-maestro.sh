@@ -43,26 +43,52 @@ install_docker() {
 
 install_or_update_maestro() {
     echo ">>> Instalando ou atualizando Maestro..."
-    if [ -d "$APP_DIR" ]; then
+
+    if [ -d "$REPO_DIR" ]; then
         echo ">>> Atualizando repositório existente..."
-        cd "$APP_DIR"
+        cd "$REPO_DIR" || exit 1
         git pull
     else
         echo ">>> Clonando repositório..."
-        git clone "$REPO_URL" "$APP_DIR"
-        cd "$APP_DIR"
+        git clone "$REPO_URL" "$REPO_DIR"
+        cd "$REPO_DIR" || exit 1
     fi
 
-    echo ">>> Subindo containers (docker compose)..."
-    if [ -f "docker-compose.yml" ] || [ -f "compose.yml" ]; then
-        docker compose pull
-        docker compose up -d
+    echo ">>> Procurando arquivo docker-compose..."
+
+    # Detecta possíveis arquivos de compose
+    for file in docker-compose.yml docker-compose.yaml compose.yaml compose.yml; do
+        if [ -f "$file" ]; then
+            COMPOSE_FILE="$file"
+            break
+        fi
+    done
+
+    if [ -n "$COMPOSE_FILE" ]; then
+        echo ">>> Arquivo de compose encontrado: $COMPOSE_FILE"
+        docker compose -f "$COMPOSE_FILE" up -d
     else
-        echo "ERRO: Arquivo docker-compose.yml não encontrado no repositório."
-        return 1
+        echo ">>> Nenhum arquivo de compose encontrado. Usando fallback com docker run..."
+        
+        # Parar e remover container antigo
+        if docker ps -a --format '{{.Names}}' | grep -Eq "^$CONTAINER_NAME\$"; then
+            echo ">>> Parando container antigo..."
+            docker stop "$CONTAINER_NAME" >/dev/null 2>&1 || true
+            echo ">>> Removendo container antigo..."
+            docker rm "$CONTAINER_NAME" >/dev/null 2>&1 || true
+        fi
+
+        echo ">>> Baixando imagem mais recente do Maestro..."
+        docker pull neoidtech/maestro:latest
+
+        echo ">>> Subindo novo container..."
+        docker run -d \
+            --name "$CONTAINER_NAME" \
+            --restart unless-stopped \
+            -p 8080:8080 \
+            neoidtech/maestro:latest
     fi
 }
-
 # -----------------------
 # Outras ações
 # -----------------------
