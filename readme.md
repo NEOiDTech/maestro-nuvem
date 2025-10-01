@@ -86,12 +86,12 @@ Aguarde a conclusão do download. A duração deste processo dependerá do taman
 Após o download da imagem, você pode iniciar o contêiner do Maestro com o seguinte comando:
 
 ```bash
-docker run -itd --name neoid_maestro --restart=always -v ./:/data --privileged --user root --network host neoidtech/maestro
+docker run -itd --name neoid-maestro-nuvem --restart=always -v ./:/data --privileged --user root --network host neoidtech/maestro
 ```
 
 **Parâmetros Chave:**
 
-*   `--name neoid_maestro`: Define o nome do contêiner como 'neoid_maestro'.
+*   `--name neoid-maestro-nuvem`: Define o nome do contêiner como 'neoid-maestro-nuvem'.
 *   `--restart=always`: Garante que o contêiner será reiniciado automaticamente em caso de falha ou reinicialização do servidor.
 *   `-v ./:/data`: Monta o diretório home do usuário no contêiner, permitindo o acesso a dados.
 *   `--privileged`: Concede privilégios estendidos ao contêiner, necessários para certas operações.
