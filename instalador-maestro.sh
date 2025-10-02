@@ -99,6 +99,7 @@ clean_project_directory() {
         "$HOME/neoid-maestro"
         "/root/maestro-nuvem"
         "/root/neoid-maestro-nuvem"
+        "./root/neoid-maestro-nuvem"
         "/root/neoid-maestro"
         "./maestro-nuvem"
         "./neoid-maestro-nuvem"
