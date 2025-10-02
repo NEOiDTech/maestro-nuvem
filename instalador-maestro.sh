@@ -87,6 +87,94 @@ check_git() {
 }
 
 # -----------------------
+# Função: Limpar diretório do projeto (CORRIGIDA)
+# -----------------------
+clean_project_directory() {
+    log "Limpando diretórios do projeto..."
+    
+    # Lista de diretórios possíveis onde o projeto pode estar
+    local possible_dirs=(
+        "$HOME/maestro-nuvem"
+        "$HOME/neoid-maestro-nuvem" 
+        "$HOME/neoid-maestro"
+        "/root/maestro-nuvem"
+        "/root/neoid-maestro-nuvem"
+        "/root/neoid-maestro"
+        "./maestro-nuvem"
+        "./neoid-maestro-nuvem"
+        "/opt/maestro-nuvem"
+        "/opt/neoid-maestro-nuvem"
+    )
+    
+    local dirs_found=()
+    
+    # Verifica quais diretórios existem
+    for dir in "${possible_dirs[@]}"; do
+        if [ -d "$dir" ]; then
+            dirs_found+=("$dir")
+            log "Diretório encontrado: $dir"
+        fi
+    done
+    
+    if [ ${#dirs_found[@]} -eq 0 ]; then
+        log "Nenhum diretório do projeto encontrado para limpeza."
+        return 0
+    fi
+    
+    echo "=================================================="
+    echo "DIRETÓRIOS DO PROJETO ENCONTRADOS:"
+    echo "=================================================="
+    for dir in "${dirs_found[@]}"; do
+        if [ -d "$dir" ]; then
+            size=$(du -sh "$dir" 2>/dev/null | cut -f1 || echo "tamanho desconhecido")
+            echo "  📁 $dir ($size)"
+        fi
+    done
+    echo "=================================================="
+    
+    read -p "❓ Deseja remover TODOS estes diretórios e seu conteúdo? (s/N): " -n 1 -r
+    echo
+    if [[ $REPLY =~ ^[Ss]$ ]]; then
+        for dir in "${dirs_found[@]}"; do
+            if [ -d "$dir" ]; then
+                log "Removendo diretório: $dir"
+                if rm -rf "$dir"; then
+                    success "Diretório $dir removido com sucesso"
+                else
+                    error "Falha ao remover diretório $dir"
+                    # Tenta com sudo se necessário
+                    if sudo rm -rf "$dir" 2>/dev/null; then
+                        success "Diretório $dir removido com sudo"
+                    else
+                        error "Não foi possível remover $dir mesmo com sudo"
+                    fi
+                fi
+            fi
+        done
+        success "Limpeza de diretórios concluída!"
+    else
+        log "Limpeza de diretórios cancelada pelo usuário."
+    fi
+}
+
+# -----------------------
+# Função: Limpeza completa (container + imagem + diretórios)
+# -----------------------
+complete_clean() {
+    log "Iniciando limpeza completa do Maestro..."
+    
+    if check_docker; then
+        stop_maestro
+        remove_container
+        remove_image  # Já inclui clean_project_directory
+    else
+        clean_project_directory
+    fi
+    
+    success "Limpeza completa concluída!"
+}
+
+# -----------------------
 # Funções principais
 # -----------------------
 
@@ -404,76 +492,6 @@ wait_for_healthy() {
                 ;;
         esac
     done
-}
-
-# -----------------------
-# Nova função: Limpar diretório do projeto
-# -----------------------
-clean_project_directory() {
-    log "Limpando diretórios do projeto..."
-    
-    # Lista de diretórios possíveis onde o projeto pode estar
-    local possible_dirs=(
-        "$HOME/maestro-nuvem"
-        "$HOME/neoid-maestro-nuvem" 
-        "$HOME/neoid-maestro"
-        "/root/maestro-nuvem"
-        "/root/neoid-maestro-nuvem"
-        "/root/neoid-maestro"
-        "./maestro-nuvem"
-        "./neoid-maestro-nuvem"
-    )
-    
-    local dirs_found=()
-    
-    # Verifica quais diretórios existem
-    for dir in "${possible_dirs[@]}"; do
-        if [ -d "$dir" ]; then
-            dirs_found+=("$dir")
-        fi
-    done
-    
-    if [ ${#dirs_found[@]} -eq 0 ]; then
-        log "Nenhum diretório do projeto encontrado para limpeza."
-        return 0
-    fi
-    
-    echo "Diretórios do projeto encontrados:"
-    for dir in "${dirs_found[@]}"; do
-        echo "  - $dir ($(du -sh "$dir" 2>/dev/null | cut -f1 || echo "tamanho desconhecido"))"
-    done
-    
-    read -p "Deseja remover TODOS estes diretórios e seu conteúdo? (s/N): " -n 1 -r
-    echo
-    if [[ $REPLY =~ ^[Ss]$ ]]; then
-        for dir in "${dirs_found[@]}"; do
-            if [ -d "$dir" ]; then
-                log "Removendo diretório: $dir"
-                rm -rf "$dir"
-                success "Diretório $dir removido"
-            fi
-        done
-        log "Limpeza de diretórios concluída."
-    else
-        log "Limpeza de diretórios cancelada."
-    fi
-}
-
-# -----------------------
-# Nova função: Limpeza completa (container + imagem + diretórios)
-# -----------------------
-complete_clean() {
-    log "Iniciando limpeza completa do Maestro..."
-    
-    if check_docker; then
-        stop_maestro
-        remove_container
-        remove_image  # Já inclui clean_project_directory
-    else
-        clean_project_directory
-    fi
-    
-    success "Limpeza completa concluída!"
 }
 
 # -----------------------
