@@ -39,7 +39,7 @@ Se houver um firewall em sua rede, é crucial que todas as portas estejam aberta
  - SIGNALING: 5960 e 5961 TCP
  - HLS: 8080 TCP
  - RTSP: 554 TCP/UDP
- - SRT: Definidas pelo listener usuário
+ - SRT: Definidas pelo usuário
 
 ## 2. Implantação do Maestro
 
