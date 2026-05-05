@@ -12,8 +12,8 @@ Antes de iniciar a implantação do NEOiD Maestro, é fundamental garantir que s
 
 Para um desempenho ideal do NEOiD Maestro, o servidor deve possuir as seguintes especificações mínimas:
 
-*   **Processador:** 2.0 GHz ou superior
-*   **Memória RAM:** 2 GB ou superior
+*   **Processador:** 2 Cores @ 2.0 GHz ou superior
+*   **Memória RAM:** 4 GB ou superior
 *   **Armazenamento:** 40 GB ou superior de espaço em disco
 
 ### 1.2. Requisitos do Sistema Operacional
