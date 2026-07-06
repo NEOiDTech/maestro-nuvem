@@ -10,7 +10,7 @@ Antes de iniciar a implantação do NEOiD MAESTRO Nuvem, é fundamental garantir
 
 ### 1.1. Requisitos de Hardware do Servidor
 
-Para um desempenho ideal do NEOiD Maestro, o servidor deve possuir as seguintes especificações mínimas:
+Para um desempenho ideal do NEOiD MAESTRO Nuvem, o servidor deve possuir as seguintes especificações mínimas:
 
 *   **Processador:** 2 Cores @ 2.0 GHz ou superior
 *   **Memória RAM:** 4 GB ou superior
