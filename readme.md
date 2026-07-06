@@ -2,11 +2,11 @@
 
 ## Introdução
 
-Este guia detalha o processo de implantação e configuração inicial do NEOiD Maestro, uma plataforma unificada para o gerenciamento de dispositivos SOMA, ENCODER PRO e DECODER PRO. O Maestro simplifica a administração de sua infraestrutura de streaming de vídeo, oferecendo recursos avançados como agregação automática de links, roteamento de vídeo em tempo real, comunicação de áudio full-duplex e monitoramento unificado.
+Este guia detalha o processo de implantação e configuração inicial do NEOiD MAESTRO Nuvem, uma plataforma unificada para o gerenciamento de dispositivos SOMA, ENCODER PRO e DECODER PRO. O Maestro simplifica a administração de sua infraestrutura de streaming de vídeo, oferecendo recursos avançados como agregação automática de links, roteamento de vídeo em tempo real, comunicação de áudio full-duplex e monitoramento unificado.
 
 ## 1. Preparação do Ambiente
 
-Antes de iniciar a implantação do NEOiD Maestro, é fundamental garantir que seu ambiente atenda aos requisitos mínimos de hardware, sistema operacional, rede e firewall.
+Antes de iniciar a implantação do NEOiD MAESTRO Nuvem, é fundamental garantir que seu ambiente atenda aos requisitos mínimos de hardware, sistema operacional, rede e firewall.
 
 ### 1.1. Requisitos de Hardware do Servidor
 
@@ -24,12 +24,12 @@ O NEOiD Maestro é compatível com sistemas operacionais baseados em Linux. Reco
 
 Para garantir a conectividade e o funcionamento adequado do Maestro, observe os seguintes requisitos de rede:
 
-*   **Endereço IP Público:** É necessário pelo menos um endereço IP público para acesso à internet. Este requisito pode ser dispensado caso o acesso à internet não seja uma necessidade para a sua implantação.
+*   **Endereço IP Público:** É necessária a exposição de pelo menos um endereço IP público para conexões à partir da internet. Este requisito pode ser dispensado caso o acesso à internet não seja uma necessidade para a sua implantação.
 *   **Planejamento de Largura de Banda:** A largura de banda da rede deve ser planejada de acordo com a taxa de codificação dos seus fluxos de vídeo. Como regra geral, planeje o dobro da largura de banda da taxa de codificação. Por exemplo, para uma taxa de codificação de 3 Mbps, uma largura de banda de 6 Mbps é recomendada.
 
-### 1.4. Configurações de Firewall
+### 1.4. Configurações de Firewall (opcional)
 
-Se houver um firewall em sua rede, é crucial que todas as portas estejam abertas para permitir o streaming em qualquer porta a qualquer momento. Certifique-se de que as configurações do firewall permitam todas as comunicações de rede necessárias, garantindo que o NEOiD Maestro possa operar sem restrições.
+Se houver um firewall, é crucial que todas as portas estejam abertas ou devidamente encaminhadas para permitir o conexão entre os equipamentos. Certifique-se de que as configurações do firewall permitam todas as comunicações de rede necessárias, garantindo que o NEOiD Maestro possa operar sem restrições.
 
   As portas de entrada padrão 
  - WEBUI: 8080 TCP
@@ -39,15 +39,15 @@ Se houver um firewall em sua rede, é crucial que todas as portas estejam aberta
  - SIGNALING: 5960 e 5961 TCP
  - HLS: 8080 TCP
  - RTSP: 554 TCP/UDP
- - SRT: Definidas pelo usuário
+ - SRT: Faixas/Portas definidas pelo usuário
 
 ## 2. Implantação do Maestro
 
-Esta seção detalha os passos para a implantação do contêiner Docker do NEOiD Maestro em seu servidor.
+Esta seção detalha os passos para a implantação do contêiner Docker do NEOiD MAESTRO Nuvem em seu servidor.
 
 ### 2.1. Obtenção de Privilégios de Administrador
 
-Para executar as operações necessárias para a instalação do Docker e do Maestro, você precisará de privilégios de administrador. Abra um terminal e execute o seguinte comando:
+Para executar as operações necessárias para a instalação do Docker e do NEOiD MAESTRO Nuvem, você precisará de privilégios de administrador. Abra um terminal e execute o seguinte comando:
 
 ```bash
 sudo su
@@ -71,9 +71,9 @@ docker --version
 
 Este comando deve exibir a versão do Docker instalada, confirmando a conclusão.
 
-### 2.3. Download da Imagem do Neoid Maestro
+### 2.3. Download da Imagem do Neoid MAESTRO Nuvem
 
-Com o Docker instalado, o próximo passo é baixar a imagem do NEOiD Maestro. Execute o comando abaixo:
+Com o Docker instalado, o próximo passo é baixar a imagem do NEOiD MAESTRO Nuvem. Execute o comando abaixo:
 
 ```bash
 docker pull neoidtech/maestro
@@ -81,9 +81,9 @@ docker pull neoidtech/maestro
 
 Aguarde a conclusão do download. A duração deste processo dependerá do tamanho da imagem e da velocidade da sua conexão com a internet. Este comando recupera a versão mais recente do Maestro, preparando-a para a implantação.
 
-### 2.4. Início do Contêiner Maestro
+### 2.4. Início do Contêiner MAESTRO Nuvem
 
-Após o download da imagem, você pode iniciar o contêiner do Maestro com o seguinte comando:
+Após o download da imagem, você pode iniciar o contêiner do MAESTRO Nuvem com o seguinte comando:
 
 ```bash
 docker run -itd --name neoid-maestro-nuvem --restart=always -v ./:/data --privileged --user root --network host neoidtech/maestro
@@ -118,7 +118,7 @@ Substitua `<server-ip>` pelo endereço IP real do seu servidor. Por exemplo, se 
 
 ### 3.2. Login no Painel
 
-Na página de login do Maestro, utilize as credenciais padrão:
+Na página de login do MAESTRO Nuvem, utilize as credenciais padrão:
 
 *   **Nome de Usuário:** `admin`
 *   **Senha:** `admin`
